@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Dashboard from './components/Dashboard'
 import AIMetrics from './components/AIMetrics'
+import AdvancedAIMetrics from './components/AdvancedAIMetrics'
 import TradingInterface from './components/TradingInterface'
 import CrossChainBridge from './components/CrossChainBridge'
 import PerformanceMonitor from './components/PerformanceMonitor'
@@ -13,10 +14,9 @@ import EmergencyStatus from './components/EmergencyStatus'
 import Hero from './components/Hero'
 import Features from './components/Features'
 import Footer from './components/Footer'
-import Test from './Test'
 
 // Services
-import { mockDataService } from './services/mockData'
+import { testnetDataService } from './services/testnetData'
 
 // Hooks
 import { useAIOrchestrator } from './hooks/useAIOrchestrator'
@@ -44,8 +44,8 @@ function App() {
         // Simulate loading time for dramatic effect
         await new Promise(resolve => setTimeout(resolve, 2000))
         
-        // Initialize mock data service
-        const initialData = await mockDataService.initialize()
+        // Initialize testnet data service
+        const initialData = await testnetDataService.initialize()
         setSystemData(initialData)
         
         // Auto-connect to AI orchestrator
@@ -97,6 +97,8 @@ function App() {
         return <Dashboard systemData={systemData} />
       case 'ai-metrics':
         return <AIMetrics aiStatus={aiStatus} lastOptimization={lastOptimization} />
+      case 'advanced-ai':
+        return <AdvancedAIMetrics />
       case 'trading':
         return <TradingInterface />
       case 'bridge':
@@ -105,8 +107,6 @@ function App() {
         return <PerformanceMonitor systemData={systemData} />
       case 'emergency':
         return <EmergencyStatus emergencyMode={emergencyMode} />
-      case 'test':
-        return <Test />
       default:
         return <Dashboard systemData={systemData} />
     }

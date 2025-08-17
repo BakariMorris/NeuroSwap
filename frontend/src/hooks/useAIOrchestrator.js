@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { mockDataService } from '../services/mockData'
+import { testnetDataService } from '../services/testnetData'
 
 export const useAIOrchestrator = () => {
   const [aiStatus, setAiStatus] = useState({
@@ -22,9 +22,9 @@ export const useAIOrchestrator = () => {
       // Simulate connection process
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Initialize AI status from mock data service
-      await mockDataService.initialize()
-      const systemData = mockDataService.getSystemData()
+      // Initialize AI status from testnet service
+      await testnetDataService.initialize()
+      const systemData = testnetDataService.getSystemData()
       
       if (systemData?.ai) {
         setAiStatus(systemData.ai)
@@ -39,7 +39,7 @@ export const useAIOrchestrator = () => {
         })
         
         // Subscribe to real-time updates
-        const unsubscribe = mockDataService.subscribe((data) => {
+        const unsubscribe = testnetDataService.subscribe((data) => {
           if (data?.ai) {
             setAiStatus(data.ai)
             

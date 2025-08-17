@@ -8,7 +8,8 @@ import {
   Menu,
   X,
   Globe,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Cpu
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -20,11 +21,11 @@ const Navbar = ({ currentPage, setCurrentPage, isConnected, aiStatus, emergencyM
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'ai-metrics', label: 'AI Metrics', icon: Brain },
+    { id: 'advanced-ai', label: 'Advanced AI', icon: Cpu },
     { id: 'trading', label: 'Trading', icon: ArrowLeftRight },
     { id: 'bridge', label: 'Cross-Chain', icon: Globe },
     { id: 'monitor', label: 'Monitor', icon: Activity },
     { id: 'emergency', label: 'Emergency', icon: Shield },
-    { id: 'test', label: 'CSS Test', icon: Zap },
   ]
 
   const handleNavClick = (pageId) => {

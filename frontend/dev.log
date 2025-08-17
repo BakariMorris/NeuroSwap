@@ -2,14 +2,12 @@
 > neuroswap-frontend@1.0.0 dev /home/bakari/ETHGlobal/NeuroSwap/frontend
 > vite
 
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
 
-  VITE v4.5.14  ready in 112 ms
+  VITE v4.5.14  ready in 116 ms
 
-  ➜  Local:   http://localhost:3000/
-  ➜  Network: http://10.255.255.254:3000/
-  ➜  Network: http://172.24.73.83:3000/
-8:01:35 AM [vite] page reload src/Test.jsx
-8:02:31 AM [vite] page reload index.html
-8:02:55 AM [vite] hmr update /src/App.jsx, /src/index.css
-8:03:04 AM [vite] hmr update /src/App.jsx, /src/index.css
-8:03:15 AM [vite] hmr update /src/components/Navbar.jsx, /src/index.css
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: http://10.255.255.254:3002/
+  ➜  Network: http://172.24.73.83:3002/
+ ELIFECYCLE  Command failed.

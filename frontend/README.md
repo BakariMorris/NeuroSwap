@@ -1,6 +1,6 @@
 # NeuroSwap Frontend
 
-A modern, responsive React frontend showcasing the AI-driven autonomous market maker (AIMM) capabilities of NeuroSwap.
+AI-Driven Autonomous Market Maker (AIMM) Frontend Demo Application with real testnet integration.
 
 ## 🎨 Design System
 
@@ -47,7 +47,7 @@ src/
 ├── lib/
 │   └── utils.js           # Utility functions and cn() helper
 ├── services/
-│   └── mockData.js        # Real-time data simulation
+│   └── testnetData.js     # Real testnet contract integration
 └── hooks/
     └── useAIOrchestrator.js # AI system integration hook
 ```
@@ -115,11 +115,36 @@ src/
 ### Prerequisites
 - Node.js 18+ and pnpm package manager
 - Modern browser with ES2022 support
+- (Optional) RPC API keys for enhanced performance
 
 ### Installation
 ```bash
 pnpm install
 ```
+
+### Configuration
+
+The application works out of the box with public RPC endpoints, but you can enhance performance by providing API keys:
+
+```bash
+# Copy environment file
+cp .env .env.local
+
+# Edit .env.local and add your API keys (optional):
+# VITE_ALCHEMY_API_KEY=your_alchemy_key_here
+# VITE_INFURA_API_KEY=your_infura_key_here
+# VITE_QUICKNODE_API_KEY=your_quicknode_key_here
+```
+
+### Supported Testnets
+
+The application connects to real deployed contracts on:
+
+- **Zircuit Testnet** (Primary) - Chain ID: 48899
+- **Arbitrum Sepolia** - Chain ID: 421614  
+- **Optimism Sepolia** - Chain ID: 11155420
+- **Base Sepolia** - Chain ID: 84532
+- **Polygon Mumbai** - Chain ID: 80001
 
 ### Development
 ```bash
@@ -182,7 +207,7 @@ Configure breakpoints in Tailwind config:
 - **Local Storage**: Persistent user settings and preferences
 
 ### Data Fetching
-- **Mock Data Service**: Realistic data simulation for demo
+- **Testnet Integration**: Real contract calls with fallback simulation
 - **Error Boundaries**: Graceful error handling and recovery
 - **Loading States**: Skeleton screens and progress indicators
 - **Retry Logic**: Automatic retry on failed requests

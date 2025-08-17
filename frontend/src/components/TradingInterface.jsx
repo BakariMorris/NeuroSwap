@@ -16,6 +16,8 @@ import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
+import { realTimeTradingService } from '../services/realTimeTradingService'
+import { livePriceService } from '../services/livePriceService'
 
 const TradingInterface = () => {
   const [fromToken, setFromToken] = useState('ETH')
@@ -27,64 +29,179 @@ const TradingInterface = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [priceData, setPriceData] = useState(null)
   const [aiOptimization, setAiOptimization] = useState(null)
+  const [tokens, setTokens] = useState([])
+  const [userBalances, setUserBalances] = useState({})
+  const [serviceInitialized, setServiceInitialized] = useState(false)
+  const [livePrices, setLivePrices] = useState({})
+  const [priceServiceReady, setPriceServiceReady] = useState(false)
 
-  const tokens = [
-    { symbol: 'ETH', name: 'Ethereum', balance: '2.4567', price: 2340.50 },
-    { symbol: 'USDC', name: 'USD Coin', balance: '5420.32', price: 1.00 },
-    { symbol: 'USDT', name: 'Tether', balance: '1250.00', price: 1.00 },
-    { symbol: 'DAI', name: 'Dai Stablecoin', balance: '890.45', price: 1.00 },
-    { symbol: 'LINK', name: 'Chainlink', balance: '125.67', price: 14.25 },
-    { symbol: 'UNI', name: 'Uniswap', balance: '45.23', price: 6.80 },
-    { symbol: 'WBTC', name: 'Wrapped Bitcoin', balance: '0.125', price: 43250.00 }
-  ]
 
   const chains = [
     { id: 'zircuit', name: 'Zircuit', color: '#3b82f6' },
-    { id: 'arbitrum', name: 'Arbitrum', color: '#8b5cf6' },
-    { id: 'optimism', name: 'Optimism', color: '#ef4444' },
-    { id: 'base', name: 'Base', color: '#10b981' },
-    { id: 'polygon', name: 'Polygon', color: '#f59e0b' }
+    { id: 'arbitrumSepolia', name: 'Arbitrum Sepolia', color: '#8b5cf6' },
+    { id: 'optimismSepolia', name: 'Optimism Sepolia', color: '#ef4444' },
+    { id: 'baseSepolia', name: 'Base Sepolia', color: '#10b981' },
+    { id: 'polygonMumbai', name: 'Polygon Mumbai', color: '#f59e0b' }
   ]
 
   const fromTokenData = tokens.find(t => t.symbol === fromToken)
   const toTokenData = tokens.find(t => t.symbol === toToken)
 
+  // Initialize trading service and load tokens
   useEffect(() => {
-    // Simulate price calculation and AI optimization
-    if (fromAmount && fromTokenData && toTokenData) {
-      setIsLoading(true)
-      
-      setTimeout(() => {
-        const baseRate = fromTokenData.price / toTokenData.price
-        const randomVariation = 0.995 + Math.random() * 0.01 // ±0.5% variation
-        const calculatedAmount = (parseFloat(fromAmount) * baseRate * randomVariation).toFixed(6)
+    const initService = async () => {
+      try {
+        // Initialize both services in parallel
+        const [tradingResult, priceResult] = await Promise.all([
+          realTimeTradingService.initialize(),
+          livePriceService.initialize()
+        ])
         
-        setToAmount(calculatedAmount)
+        const tokenList = await realTimeTradingService.getTokenList(selectedChain)
+        setTokens(tokenList)
+        setServiceInitialized(true)
+        setPriceServiceReady(priceResult)
         
-        // Generate AI optimization data
-        const optimization = {
-          enabled: true,
-          savingsPercent: Math.random() * 1.5 + 0.5, // 0.5-2%
-          savingsUsd: parseFloat(fromAmount) * fromTokenData.price * 0.01 * (Math.random() * 1.5 + 0.5),
-          optimalRoute: Math.random() > 0.5 ? 'Direct' : 'Multi-hop',
-          confidenceScore: 85 + Math.random() * 12,
-          estimatedGas: Math.floor(Math.random() * 100000 + 80000),
-          priceImpact: Math.random() * 0.3 + 0.1
-        }
+        // Get initial prices
+        const prices = livePriceService.getAllPrices()
+        setLivePrices(prices)
         
-        setAiOptimization(optimization)
-        
-        setPriceData({
-          rate: baseRate * randomVariation,
-          priceImpact: optimization.priceImpact,
-          minimumReceived: parseFloat(calculatedAmount) * (1 - slippageTolerance / 100),
-          gasFee: optimization.estimatedGas * 0.000000015 * 2340 // Rough ETH gas calculation
+        // Subscribe to real-time updates
+        const tradingUnsubscribe = realTimeTradingService.subscribe((event) => {
+          if (event.type === 'price_update') {
+            // Refresh quotes if there's an active trade calculation
+            if (fromAmount && fromToken && toToken) {
+              updateQuote()
+            }
+          }
         })
         
-        setIsLoading(false)
-      }, 1500)
+        const priceUnsubscribe = livePriceService.subscribe((event) => {
+          if (event.type === 'price_update') {
+            setLivePrices(event.prices)
+            // Refresh USD calculations
+            if (fromAmount && fromToken && toToken) {
+              updateQuote()
+            }
+          }
+        })
+        
+        return () => {
+          tradingUnsubscribe()
+          priceUnsubscribe()
+        }
+      } catch (error) {
+        console.error('Failed to initialize trading service:', error)
+        // Fallback to basic token list
+        setTokens([
+          { symbol: 'ETH', name: 'Ethereum', decimals: 18, isNative: true },
+          { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
+          { symbol: 'USDT', name: 'Tether', decimals: 6 },
+          { symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
+          { symbol: 'LINK', name: 'Chainlink', decimals: 18 },
+          { symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8 }
+        ])
+      }
     }
-  }, [fromAmount, fromToken, toToken, slippageTolerance])
+    
+    initService()
+  }, [selectedChain])
+
+  // Load user balances when chain or tokens change
+  useEffect(() => {
+    const loadBalances = async () => {
+      if (serviceInitialized && tokens.length > 0) {
+        try {
+          // For demo purposes, we'll use a mock address
+          // In real app, this would come from connected wallet
+          const mockUserAddress = '0x742d35cc6bf94d82e6b7b82b3cc3a3a5f7d4b5e6'
+          const balances = await realTimeTradingService.getTokenBalances(selectedChain, mockUserAddress)
+          setUserBalances(balances)
+        } catch (error) {
+          console.warn('Could not load token balances:', error.message)
+          // Set fallback balances
+          const fallbackBalances = {}
+          tokens.forEach(token => {
+            fallbackBalances[token.symbol] = {
+              formatted: (Math.random() * 1000 + 10).toFixed(4),
+              raw: '0'
+            }
+          })
+          setUserBalances(fallbackBalances)
+        }
+      }
+    }
+    
+    loadBalances()
+  }, [serviceInitialized, tokens, selectedChain])
+
+  // Update quote when trading parameters change
+  const updateQuote = async () => {
+    if (!fromAmount || !fromTokenData || !toTokenData || !serviceInitialized) {
+      setToAmount('')
+      setPriceData(null)
+      setAiOptimization(null)
+      return
+    }
+
+    setIsLoading(true)
+    
+    try {
+      // Get comprehensive quote with AI optimization
+      const quoteData = await realTimeTradingService.getComprehensiveQuote(
+        selectedChain,
+        fromToken,
+        toToken,
+        fromAmount
+      )
+      
+      setToAmount(quoteData.quote.amountOut)
+      
+      // Set AI optimization data with live USD calculations
+      const fromTokenPrice = livePrices[fromToken]?.price || 2340.50
+      setAiOptimization({
+        enabled: quoteData.aiOptimization.isRealOptimization,
+        savingsPercent: quoteData.aiOptimization.feeOptimization,
+        savingsUsd: parseFloat(fromAmount) * quoteData.aiOptimization.feeOptimization * 0.01 * fromTokenPrice,
+        optimalRoute: quoteData.route.routeType,
+        confidenceScore: quoteData.aiOptimization.confidence,
+        estimatedGas: quoteData.gasCost.gasLimit,
+        priceImpact: quoteData.route.priceImpact * 100 || 0.1,
+        source: quoteData.aiOptimization.source
+      })
+      
+      // Set price data
+      setPriceData({
+        rate: parseFloat(quoteData.quote.amountOut) / parseFloat(fromAmount),
+        priceImpact: quoteData.route.priceImpact * 100 || 0.1,
+        minimumReceived: parseFloat(quoteData.quote.amountOut) * (1 - slippageTolerance / 100),
+        gasFee: quoteData.gasCost.gasCostUSD,
+        isRealData: quoteData.quote.isRealQuote,
+        routeInfo: {
+          path: quoteData.route.path || [fromToken, toToken],
+          routeType: quoteData.route.routeType || 'Direct',
+          hops: quoteData.route.hops || 1,
+          slippageProtection: quoteData.route.slippageProtection || slippageTolerance / 100,
+          gasEstimate: quoteData.route.gasEstimate || quoteData.gasCost.gasLimit
+        }
+      })
+      
+    } catch (error) {
+      console.error('Error getting quote:', error)
+      toast.error('Unable to get quote. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    // Debounce quote updates
+    const timeoutId = setTimeout(() => {
+      updateQuote()
+    }, 800) // 800ms debounce
+    
+    return () => clearTimeout(timeoutId)
+  }, [fromAmount, fromToken, toToken, slippageTolerance, selectedChain, serviceInitialized])
 
   const handleSwapTokens = () => {
     setFromToken(toToken)
@@ -169,7 +286,7 @@ const TradingInterface = () => {
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700">From</label>
             <span className="text-sm text-gray-500">
-              Balance: {fromTokenData?.balance || '0.00'} {fromToken}
+              Balance: {userBalances[fromToken]?.formatted || '0.0000'} {fromToken}
             </span>
           </div>
           
@@ -195,12 +312,16 @@ const TradingInterface = () => {
             />
           </div>
           
-          {fromTokenData && fromAmount && (
+          {fromAmount && (
             <div className="text-sm text-gray-600">
-              ≈ ${(parseFloat(fromAmount) * fromTokenData.price).toLocaleString(undefined, { 
+              ≈ ${(parseFloat(fromAmount) * (livePrices[fromToken]?.price || 2340.50)).toLocaleString(undefined, { 
                 minimumFractionDigits: 2, 
                 maximumFractionDigits: 2 
-              })}
+              })} {priceServiceReady && livePrices[fromToken]?.source === 'live' && (
+                <Badge variant="outline" className="ml-1 text-xs bg-green-50 text-green-700">
+                  Live
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -220,7 +341,7 @@ const TradingInterface = () => {
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700">To</label>
             <span className="text-sm text-gray-500">
-              Balance: {toTokenData?.balance || '0.00'} {toToken}
+              Balance: {userBalances[toToken]?.formatted || '0.0000'} {toToken}
             </span>
           </div>
           
@@ -251,12 +372,16 @@ const TradingInterface = () => {
             </div>
           </div>
           
-          {toTokenData && toAmount && (
+          {toAmount && (
             <div className="text-sm text-gray-600">
-              ≈ ${(parseFloat(toAmount) * toTokenData.price).toLocaleString(undefined, { 
+              ≈ ${(parseFloat(toAmount) * (livePrices[toToken]?.price || 1.00)).toLocaleString(undefined, { 
                 minimumFractionDigits: 2, 
                 maximumFractionDigits: 2 
-              })}
+              })} {priceServiceReady && livePrices[toToken]?.source === 'live' && (
+                <Badge variant="outline" className="ml-1 text-xs bg-green-50 text-green-700">
+                  Live
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -266,11 +391,18 @@ const TradingInterface = () => {
           <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2 mb-3">
               <Zap className="h-5 w-5 text-yellow-500" />
-              <span className="font-semibold text-gray-900">AI Optimization Active</span>
+              <span className="font-semibold text-gray-900">
+                {aiOptimization.enabled ? 'AI Optimization Active' : 'AI Optimization (Fallback)'}
+              </span>
               <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                 <CheckCircle className="h-3 w-3" />
                 <span>{aiOptimization.confidenceScore.toFixed(1)}% Confidence</span>
               </div>
+              {aiOptimization.source && (
+                <Badge variant="outline" className="text-xs">
+                  {aiOptimization.source}
+                </Badge>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -293,7 +425,14 @@ const TradingInterface = () => {
           <div className="mt-6 space-y-3 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Exchange Rate</span>
-              <span className="font-medium">1 {fromToken} = {priceData.rate.toFixed(4)} {toToken}</span>
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">1 {fromToken} = {priceData.rate.toFixed(4)} {toToken}</span>
+                {priceData.isRealData && (
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                    Live
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center justify-between text-sm">
@@ -309,6 +448,29 @@ const TradingInterface = () => {
               <span className="text-gray-600">Minimum Received</span>
               <span className="font-medium">{priceData.minimumReceived.toFixed(4)} {toToken}</span>
             </div>
+            
+            {priceData.routeInfo && (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Route</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">
+                      {priceData.routeInfo.path.join(' → ')} ({priceData.routeInfo.hops} hop{priceData.routeInfo.hops !== 1 ? 's' : ''})
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {priceData.routeInfo.routeType}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Recommended Slippage</span>
+                  <span className="font-medium text-blue-600">
+                    {(priceData.routeInfo.slippageProtection * 100).toFixed(2)}%
+                  </span>
+                </div>
+              </>
+            )}
             
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Network Fee</span>
