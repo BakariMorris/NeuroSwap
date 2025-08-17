@@ -281,3 +281,54 @@ Academic research on AI-driven market making
 This project creates genuine value for the DeFi ecosystem while strategically maximizing our chances of winning significant prizes at ETHGlobal NYC 2025.
 
 Built with ❤️ for the future of decentralized finance
+
+# Failure Prevention Guidelines
+Based on analysis of past build failures and issues in this repository:
+
+## Dependency Management
+- **ALWAYS check existing dependencies** before adding new ones
+- Run `pnpm list` to verify package availability before importing
+- Avoid adding conflicting versions of similar packages (e.g., @safe-global dependencies)
+- When removing dependencies, clean up ALL related imports and configurations
+- Use exact dependency resolution to prevent version conflicts
+
+## Build Process
+- **Test builds immediately** after major dependency changes
+- Address Vite/bundler configuration issues before proceeding with features
+- Monitor for port conflicts (common issue: ports 3000, 3001 being occupied)
+- Clean node_modules and reinstall if build issues persist
+- Always run `pnpm install` after package.json changes
+
+## Code Quality
+- **Implement proper error handling** with try-catch blocks and fallback data
+- Add null checks for optional chaining (`?.`) to prevent runtime errors
+- Use TypeScript strict mode to catch type issues early
+- Implement graceful degradation for external service failures
+- Test all code paths, especially error scenarios
+
+## Git Management
+- **Create meaningful commit messages** that explain the "why" not just "what"
+- Test functionality before committing
+- Avoid committing node_modules changes unless absolutely necessary
+- Use `.gitignore` properly to exclude build artifacts and logs
+- Resolve merge conflicts carefully, especially in package files
+
+## Testing Strategy
+- **Write tests for critical functionality** before implementing complex features
+- Test error scenarios and edge cases
+- Validate external API integrations with mock data
+- Run tests after dependency updates
+- Include performance testing for AI optimization algorithms
+
+## Development Workflow
+- **Incremental development** - build features in small, testable chunks
+- Validate each component works before moving to the next
+- Keep backup of working states before major refactoring
+- Document complex logic and AI parameter calculations
+- Use feature flags for experimental functionality
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

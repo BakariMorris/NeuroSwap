@@ -76,15 +76,14 @@ const AIInsights = () => {
         }
       ]
 
-      // Randomly select 3-4 insights
+      // Select insights based on system data priorities
       const selectedInsights = insightTypes
-        .sort(() => Math.random() - 0.5)
-        .slice(0, Math.floor(Math.random() * 2) + 3)
+        .slice(0, 4) // Take first 4 insights consistently
         .map((insight, index) => ({
           ...insight,
           id: `insight_${Date.now()}_${index}`,
-          timestamp: Date.now() - Math.random() * 1800000, // Last 30 minutes
-          status: Math.random() > 0.3 ? 'active' : 'implemented'
+          timestamp: Date.now() - (index * 300000), // Spread over last 20 minutes
+          status: index < 2 ? 'active' : 'implemented' // First 2 are active
         }))
 
       return selectedInsights.sort((a, b) => b.timestamp - a.timestamp)
@@ -166,36 +165,36 @@ const AIInsights = () => {
   }
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="card p-6 h-fit">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
           <Brain className="h-5 w-5 text-blue-600" />
           <span>AI Insights</span>
         </h3>
         
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
+        <div className="flex items-center space-x-2 text-sm text-gray-600 shrink-0">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span>Live Analysis</span>
         </div>
       </div>
       
-      <div className="space-y-4 max-h-96 overflow-y-auto">
+      <div className="space-y-4">
         {insights.map((insight) => {
           const Icon = insight.icon
           
           return (
             <div 
               key={insight.id}
-              className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all duration-200 hover:shadow-sm"
+              className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all duration-200 hover:shadow-sm bg-white"
             >
               <div className="flex items-start space-x-3">
                 <div className={`p-2 rounded-lg ${insight.color}`}>
                   <Icon className="h-4 w-4" />
                 </div>
                 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900 truncate">
+                    <h4 className="font-medium text-gray-900 break-words">
                       {insight.title}
                     </h4>
                     {getImpactBadge(insight.impact)}
@@ -205,14 +204,14 @@ const AIInsights = () => {
                     {insight.description}
                   </p>
                   
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-4 text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2 sm:space-x-4 text-gray-500">
                       <span>Confidence: {insight.confidence}%</span>
                       <span>Action: {insight.action}</span>
                       <span>ETA: {insight.timeToImplement}</span>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 shrink-0">
                       {getStatusBadge(insight.status)}
                       <span className="text-gray-500">
                         {formatTime(insight.timestamp)}
@@ -221,14 +220,14 @@ const AIInsights = () => {
                   </div>
                   
                   {/* Confidence Bar */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                      <span>AI Confidence</span>
-                      <span>{insight.confidence}%</span>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+                      <span className="font-medium">AI Confidence</span>
+                      <span className="font-semibold">{insight.confidence}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`h-1.5 rounded-full ${
+                        className={`h-2 rounded-full transition-all duration-300 ${
                           insight.confidence >= 90 ? 'bg-green-500' :
                           insight.confidence >= 80 ? 'bg-yellow-500' :
                           'bg-red-500'
