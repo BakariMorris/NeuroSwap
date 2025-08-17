@@ -88,33 +88,68 @@ class LivePriceService {
       console.warn('CoinGecko API failed:', error.message)
     }
 
-    // Fallback to alternative API or mock prices
-    return this.getFallbackPrices()
+    // Fallback to alternative API or cached prices
+    return await this.getFallbackPrices()
   }
 
-  getFallbackPrices() {
-    // Generate realistic price variations based on current market
-    const basePrices = {
-      ETH: 2340.50,
+  async getFallbackPrices() {
+    // Try alternative price sources before using static fallback
+    try {
+      // Try Binance API as backup
+      const response = await fetch('https://api.binance.com/api/v3/ticker/price')
+      const data = await response.json()
+      
+      const binancePrices = {}
+      const symbolMap = {
+        'ETHUSDT': 'ETH',
+        'BTCUSDT': 'WBTC',
+        'LINKUSDT': 'LINK'
+      }
+      
+      for (const item of data) {
+        if (symbolMap[item.symbol]) {
+          binancePrices[symbolMap[item.symbol]] = parseFloat(item.price)
+        }
+      }
+      
+      // Add stablecoins
+      binancePrices.USDC = 1.00
+      binancePrices.USDT = 1.00  
+      binancePrices.DAI = 1.00
+      
+      if (Object.keys(binancePrices).length > 3) {
+        return binancePrices
+      }
+    } catch (error) {
+      console.warn('Binance fallback failed:', error.message)
+    }
+
+    // Last resort: use cached prices if available, otherwise use conservative estimates
+    const lastKnownPrices = {}
+    for (const [symbol] of [['ETH'], ['USDC'], ['USDT'], ['DAI'], ['LINK'], ['WBTC']]) {
+      const cached = this.priceCache.get(symbol)
+      if (cached && Date.now() - cached.timestamp < 3600000) { // 1 hour cache
+        lastKnownPrices[symbol] = cached.price
+      }
+    }
+    
+    if (Object.keys(lastKnownPrices).length > 0) {
+      return lastKnownPrices
+    }
+
+    // Final fallback to reasonable estimates (no random variations)
+    return {
+      ETH: 2400,    // Conservative ETH price
       USDC: 1.00,
       USDT: 1.00,
       DAI: 1.00,
-      LINK: 14.25,
-      WBTC: 43250.00
+      LINK: 14.50,
+      WBTC: 43000
     }
-
-    const prices = {}
-    for (const [symbol, basePrice] of Object.entries(basePrices)) {
-      // Add small random variation (±2%)
-      const variation = 0.98 + Math.random() * 0.04
-      prices[symbol] = basePrice * variation
-    }
-
-    return prices
   }
 
-  setFallbackPrices() {
-    const prices = this.getFallbackPrices()
+  async setFallbackPrices() {
+    const prices = await this.getFallbackPrices()
     
     for (const [symbol, price] of Object.entries(prices)) {
       this.priceCache.set(symbol, {

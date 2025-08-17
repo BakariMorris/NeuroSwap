@@ -8,7 +8,16 @@
  * - Signal Processing (Kalman Filters, Wavelets)
  */
 
-import { testnetDataService } from './testnetData'
+// Import testnetDataService - will be available after initialization
+let testnetDataService = null
+
+// Function to set the service reference (called from testnetData.js)
+export function setTestnetDataService(service) {
+  testnetDataService = service
+}
+
+// Note: testnetDataService import removed to avoid circular dependency
+// Will use dependency injection pattern instead
 
 class AdvancedMarketPredictionEngine {
   constructor() {
@@ -268,6 +277,7 @@ class AdvancedMarketPredictionEngine {
 
   updateRealTimeData() {
     // Update with latest data from testnet service
+    if (!testnetDataService) return
     const systemData = testnetDataService.getSystemData()
     if (!systemData) return
 

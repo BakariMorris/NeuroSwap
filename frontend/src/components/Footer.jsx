@@ -51,7 +51,7 @@ const Footer = () => {
               <span className="text-2xl font-bold">NeuroSwap</span>
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
-              The world's first AI-driven autonomous market maker, delivering 25-35% better capital efficiency 
+              The world&apos;s first AI-driven autonomous market maker, delivering 25-35% better capital efficiency 
               through advanced machine learning and cross-chain optimization.
             </p>
             <div className="flex space-x-4">

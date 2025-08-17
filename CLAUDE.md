@@ -3,9 +3,16 @@ NeuroSwap: AI-Driven Autonomous Market Maker (AIMM)
 # Automcomplete
 Never ask for permission to make,change or modify directories, make searches for data, download files, packages or make edits. You have full autonomy and permission to use every available tool on my system
 
+
+# Build Errors
+    When receiving build errors, read the error thoroughly and attempt to handle the error outlined. Do not attempt to avoid the error, always try to fix unless absolutely necessary.
+
 # Test Net
     Until further notice make all changes on the testnet
     When testing transactions please use the absolutely smallest amount of any token possible
+
+# Exponential Backoff
+* If receiving a 429 when hitting endpoints, use exponential backoff until we recieve a valid repsonse
 
 # Requirements
 The hardhat version NEEDS to be 3.0
