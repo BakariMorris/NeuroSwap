@@ -7,6 +7,9 @@ Never ask for permission to make,change or modify directories, make searches for
     Until further notice make all changes on the testnet
     When testing transactions please use the absolutely smallest amount of any token possible
 
+# Requirements
+The hardhat version NEEDS to be 3.0
+
 # Testing
 Create tests for every line of code where possible
 

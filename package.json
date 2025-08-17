@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test/**/*.test.js --timeout 10000",
+    "test:ai": "mocha ai-agent/tests/**/*.test.js --timeout 10000",
+    "start:ai": "node ai-agent/index.js",
+    "start:ai:demo": "node ai-agent/index.js --demo",
+    "validate": "hardhat test && npm run test:ai"
   },
   "keywords": [],
   "author": "",
@@ -14,12 +18,21 @@
     "@chainlink/contracts": "^1.4.0",
     "@layerzerolabs/lz-evm-sdk-v2": "^3.0.125",
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^17.2.1"
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
+    "mathjs": "^14.6.0",
+    "ml-matrix": "^6.12.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.0",
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "chai": "^4.5.0",
     "ethers": "^6.15.0",
-    "hardhat": "^3.0.0"
+    "hardhat": "^3.0.0",
+    "mocha": "^11.7.1"
   },
   "type": "module"
 }
