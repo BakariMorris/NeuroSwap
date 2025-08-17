@@ -33,8 +33,7 @@ The NeuroSwap frontend has been successfully migrated from mock data to real tes
 - **All components**: Seamless transition from mock to real data
 
 ### 6. Build Configuration
-- **Dependencies**: Added @safe-global packages
-- **Vite Config**: External dependency resolution
+- **Vite Config**: Optimized dependency resolution
 - **Build**: Successful production builds (1MB gzipped)
 
 ## 📊 Validation Results

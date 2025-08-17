@@ -27,7 +27,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          web3: ['ethers', 'wagmi', '@rainbow-me/rainbowkit'],
+          web3: ['ethers'],
           charts: ['recharts']
         },
       }
