@@ -1,3 +1,5 @@
+3 Minute Explainer Video: https://www.loom.com/share/82ee76f1983a4bcf86834f4925dd0859
+
 # 🧠 NeuroSwap: AI-Driven Autonomous Market Maker
 
 [![ETHGlobal NYC 2025](https://img.shields.io/badge/ETHGlobal-NYC%202025-blue)](https://ethglobal.com/)
