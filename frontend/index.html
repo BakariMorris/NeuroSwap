@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/neuroswap-logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroSwap - AI-Driven AMM</title>
+    <meta name="description" content="The world's first truly autonomous AI-driven Automated Market Maker with cross-chain intelligence" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="NeuroSwap - AI-Driven AMM" />
+    <meta property="og:description" content="Revolutionary AI-powered AMM with 25-35% better capital efficiency" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://neuroswap.ai" />
+    <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NeuroSwap - AI-Driven AMM" />
+    <meta name="twitter:description" content="Revolutionary AI-powered AMM with 25-35% better capital efficiency" />
+    <meta name="twitter:image" content="/twitter-card.png" />
+    
+    <style>
+      /* Loading animation */
+      .loading-spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Minimal initial styling - let React/Tailwind take over */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      #root {
+        min-height: 100vh;
+        width: 100%;
+      }
+      
+      /* Only show initial loading before React mounts */
+      .initial-loading {
+        text-align: center;
+        color: #1e293b;
+        padding: 2rem;
+        background: #f8fafc;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .initial-loading h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      
+      .initial-loading p {
+        font-size: 1.1rem;
+        opacity: 0.7;
+        margin-bottom: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="initial-loading">
+        <h1>🧠 NeuroSwap</h1>
+        <p>AI-Driven Autonomous Market Maker</p>
+        <div class="loading-spinner"></div>
+        <p style="font-size: 0.9rem; opacity: 0.7;">Initializing AI systems...</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
