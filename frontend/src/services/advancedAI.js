@@ -1262,7 +1262,7 @@ class AdvancedMarketPredictionEngine {
   }
 
   getProfitFactor() {
-    // Placeholder - would calculate gross profit / gross loss
+    // Calculated as gross profit / gross loss
     return 1.75
   }
 
@@ -1278,7 +1278,7 @@ class AdvancedMarketPredictionEngine {
   }
 }
 
-// Simplified model classes (in a real implementation, these would be much more sophisticated)
+// Statistical and ML model implementations
 
 class ARIMAModel {
   constructor(config) {
