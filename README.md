@@ -1,6 +1,8 @@
-3 Minute Explainer Video: https://www.loom.com/share/82ee76f1983a4bcf86834f4925dd0859
+## 3 Minute Explainer Video: 
+https://www.loom.com/share/82ee76f1983a4bcf86834f4925dd0859
 
-Live Demo: https://neuro-swap.vercel.app/
+## Live Demo:
+https://neuro-swap.vercel.app/
 
 # 🧠 NeuroSwap: AI-Driven Autonomous Market Maker
 
