@@ -1,10 +1,12 @@
 /**
  * Advanced Parameter Optimization Engine
  * Uses reinforcement learning and genetic algorithms for AMM optimization
+ * Integrated with ROI Maximization Strategy
  */
 
 import { Matrix } from 'ml-matrix';
 import { round, evaluate } from 'mathjs';
+import ROIMaximizationStrategy from './ROIMaximizationStrategy.js';
 
 export class ParameterOptimizer {
     constructor(config = {}) {
@@ -25,27 +27,46 @@ export class ParameterOptimizer {
         this.bestParameters = null;
         this.currentGeneration = 0;
         
-        console.log('🧠 Parameter Optimizer initialized with ML algorithms');
+        // Initialize ROI Maximization Strategy
+        this.roiStrategy = new ROIMaximizationStrategy();
+        this.roiStrategy.on('optimization', (result) => {
+            this.handleROIOptimization(result);
+        });
+        
+        console.log('🧠 Parameter Optimizer initialized with ML algorithms and ROI Strategy');
     }
 
     /**
-     * Main optimization method using reinforcement learning
+     * Main optimization method using reinforcement learning + ROI maximization
      */
     async optimizeParameters(marketAnalysis, currentParams, performanceMetrics) {
         try {
-            console.log('⚡ Starting parameter optimization...');
+            console.log('⚡ Starting parameter optimization with ROI maximization...');
             
-            // Create state representation from market analysis
-            const state = this.createStateVector(marketAnalysis);
+            // Phase 1: ROI Strategy Optimization
+            const poolState = {
+                reserveX: currentParams.reserveX || 1000000,
+                reserveY: currentParams.reserveY || 1000000,
+                ...currentParams
+            };
             
-            // Use Q-learning to determine optimal action
-            const action = await this.selectOptimalAction(state, currentParams);
+            const liquidityPositions = currentParams.liquidityPositions || [];
+            const roiOptimization = this.roiStrategy.optimizeROI(marketAnalysis, poolState, liquidityPositions);
+            
+            console.log(`🎯 ROI optimization complete: ${roiOptimization.expectedImprovement.improvementPercentage.toFixed(2)}% improvement expected`);
+            
+            // Phase 2: Traditional ML optimization (enhanced with ROI insights)
+            const state = this.createStateVector(marketAnalysis, roiOptimization);
+            
+            // Use Q-learning to determine optimal action (incorporating ROI strategy)
+            const action = await this.selectOptimalAction(state, currentParams, roiOptimization);
             
             // Apply genetic algorithm for fine-tuning
             const optimizedParams = await this.applyGeneticOptimization(
                 action.parameters,
                 marketAnalysis,
-                performanceMetrics
+                performanceMetrics,
+                roiOptimization
             );
             
             // Validate parameters against constraints
@@ -469,5 +490,259 @@ export class ParameterOptimizer {
             lastUpdate: params.lastUpdate,
             isActive: params.isActive
         };
+    }
+
+    /**
+     * Handle ROI optimization results and integrate with ML optimization
+     */
+    handleROIOptimization(roiResult) {
+        console.log(`💰 ROI Strategy updated: ${roiResult.riskAdjustedROI.totalROI.toFixed(4)} total ROI`);
+        
+        // Update learning rate based on ROI confidence
+        if (roiResult.strategyConfidence > 0.8) {
+            this.config.learningRate = Math.min(0.02, this.config.learningRate * 1.05);
+        } else if (roiResult.strategyConfidence < 0.5) {
+            this.config.learningRate = Math.max(0.005, this.config.learningRate * 0.95);
+        }
+        
+        // Store ROI insights for future optimizations
+        this.lastROIResult = roiResult;
+        
+        // Execute high-priority recommendations immediately
+        for (const rec of roiResult.recommendations) {
+            if (rec.priority === 'HIGH' && rec.confidence > 0.7) {
+                console.log(`🎯 Executing recommendation: ${rec.action}`);
+                this.executeRecommendation(rec);
+            }
+        }
+    }
+
+    /**
+     * Enhanced state vector creation incorporating ROI optimization data
+     */
+    createStateVector(marketAnalysis, roiOptimization = null) {
+        const baseState = [
+            marketAnalysis.marketOverview.avgVolatility || 0,
+            marketAnalysis.marketOverview.totalVolume || 0,
+            marketAnalysis.liquidityMetrics.concentrationRatio || 0,
+            marketAnalysis.riskMetrics.riskScore || 0,
+            marketAnalysis.arbitrageSignals.signalStrength || 0,
+            marketAnalysis.marketEfficiency.efficiencyScore || 0,
+            marketAnalysis.priceData ? marketAnalysis.priceData.length : 0
+        ];
+
+        // Add ROI optimization data if available
+        if (roiOptimization) {
+            const roiState = [
+                roiOptimization.riskAdjustedROI.totalROI || 0,
+                roiOptimization.strategyConfidence || 0,
+                roiOptimization.optimalParams.confidence || 0,
+                roiOptimization.liquidityStrategy.totalExpectedAPY || 0,
+                roiOptimization.feeStrategy.totalFee * 10000 || 0, // Convert to bps
+                roiOptimization.arbitrageOps.length || 0,
+                roiOptimization.expectedImprovement.relativeImprovement || 0
+            ];
+            
+            return [...baseState, ...roiState];
+        }
+
+        return baseState;
+    }
+
+    /**
+     * Enhanced action selection incorporating ROI strategy insights
+     */
+    async selectOptimalAction(state, currentParams, roiOptimization = null) {
+        const stateKey = this.getStateKey(state);
+        
+        // Get base action from Q-learning
+        let action = await this.getQAction(stateKey, currentParams);
+        
+        // Enhance action with ROI strategy insights
+        if (roiOptimization && roiOptimization.strategyConfidence > 0.6) {
+            // Apply ROI-optimized parameters
+            action.parameters.feeRate = Math.round(roiOptimization.feeStrategy.totalFee * 10000);
+            
+            if (roiOptimization.optimalParams.amplificationCoeff) {
+                action.parameters.amplificationCoeff = roiOptimization.optimalParams.amplificationCoeff;
+            }
+            
+            if (roiOptimization.optimalParams.concentrationGamma) {
+                action.parameters.concentrationGamma = roiOptimization.optimalParams.concentrationGamma;
+            }
+            
+            // Adjust spread multiplier based on market regime
+            const regimeMultiplier = this.getRegimeMultiplier(roiOptimization.marketRegime);
+            action.parameters.spreadMultiplier = Math.round(
+                action.parameters.spreadMultiplier * regimeMultiplier
+            );
+            
+            console.log(`🔗 Action enhanced with ROI insights: fee=${action.parameters.feeRate}bps, regime=${roiOptimization.marketRegime}`);
+        }
+        
+        return action;
+    }
+
+    /**
+     * Enhanced genetic algorithm incorporating ROI fitness
+     */
+    async applyGeneticOptimization(baseParams, marketAnalysis, performanceMetrics, roiOptimization = null) {
+        console.log('🧬 Applying genetic optimization with ROI fitness...');
+        
+        let population = this.createInitialPopulation(baseParams);
+        
+        for (let generation = 0; generation < 10; generation++) {
+            // Calculate fitness with ROI enhancement
+            const fitnessScores = population.map(individual => {
+                let fitness = this.calculateFitness(individual, marketAnalysis, performanceMetrics);
+                
+                // Add ROI fitness component
+                if (roiOptimization) {
+                    const roiFitness = this.calculateROIFitness(individual, roiOptimization);
+                    fitness = fitness * 0.7 + roiFitness * 0.3; // 70% traditional, 30% ROI
+                }
+                
+                return fitness;
+            });
+            
+            // Select best performers
+            const sortedPopulation = population
+                .map((individual, index) => ({ individual, fitness: fitnessScores[index] }))
+                .sort((a, b) => b.fitness - a.fitness);
+            
+            // Create next generation
+            const nextGeneration = [];
+            
+            // Keep top 20% (elitism)
+            const eliteCount = Math.floor(this.config.populationSize * 0.2);
+            for (let i = 0; i < eliteCount; i++) {
+                nextGeneration.push({ ...sortedPopulation[i].individual });
+            }
+            
+            // Generate rest through crossover and mutation
+            while (nextGeneration.length < this.config.populationSize) {
+                const parent1 = this.selectParent(sortedPopulation);
+                const parent2 = this.selectParent(sortedPopulation);
+                const child = this.crossover(parent1, parent2);
+                
+                if (Math.random() < this.config.mutationRate) {
+                    this.mutate(child);
+                }
+                
+                nextGeneration.push(child);
+            }
+            
+            population = nextGeneration;
+        }
+        
+        // Return best individual
+        const finalFitness = population.map(individual => 
+            this.calculateFitness(individual, marketAnalysis, performanceMetrics)
+        );
+        const bestIndex = finalFitness.indexOf(Math.max(...finalFitness));
+        
+        console.log(`🎯 Genetic optimization complete: fitness=${finalFitness[bestIndex].toFixed(4)}`);
+        return population[bestIndex];
+    }
+
+    /**
+     * Calculate ROI-based fitness for genetic algorithm
+     */
+    calculateROIFitness(parameters, roiOptimization) {
+        let fitness = 0;
+        
+        // Fee rate alignment with ROI strategy
+        const targetFeeRate = roiOptimization.feeStrategy.totalFee * 10000;
+        const feeDeviation = Math.abs(parameters.feeRate - targetFeeRate) / targetFeeRate;
+        fitness += Math.max(0, 0.4 - feeDeviation);
+        
+        // Expected improvement bonus
+        if (roiOptimization.expectedImprovement.meetsTarget) {
+            fitness += 0.3;
+        }
+        
+        // Confidence bonus
+        fitness += roiOptimization.strategyConfidence * 0.2;
+        
+        // Market regime appropriateness
+        const regimeBonus = this.getRegimeFitnessBonus(parameters, roiOptimization.marketRegime);
+        fitness += regimeBonus * 0.1;
+        
+        return Math.max(0, Math.min(1, fitness));
+    }
+
+    /**
+     * Execute high-priority recommendations from ROI strategy
+     */
+    executeRecommendation(recommendation) {
+        switch (recommendation.type) {
+            case 'PARAMETER_UPDATE':
+                if (recommendation.params) {
+                    console.log('🔧 Updating parameters based on ROI recommendation');
+                    // Parameters would be applied to the actual AMM contracts
+                }
+                break;
+                
+            case 'LIQUIDITY_REBALANCE':
+                console.log('⚖️ Triggering liquidity rebalance');
+                // Would trigger rebalancing logic
+                break;
+                
+            case 'RISK_MANAGEMENT':
+                console.log('🛡️ Activating risk management protocols');
+                // Would activate risk management measures
+                break;
+                
+            default:
+                console.log(`ℹ️ Recommendation noted: ${recommendation.action}`);
+        }
+    }
+
+    /**
+     * Get regime-specific multiplier for parameters
+     */
+    getRegimeMultiplier(regime) {
+        const multipliers = {
+            'TRENDING_HIGH_VOLATILITY': 1.5,
+            'TRENDING_MODERATE': 1.2,
+            'NEUTRAL': 1.0,
+            'RANGING_MODERATE': 0.8,
+            'RANGING_LOW_VOLATILITY': 0.6
+        };
+        
+        return multipliers[regime] || 1.0;
+    }
+
+    /**
+     * Get fitness bonus based on regime appropriateness
+     */
+    getRegimeFitnessBonus(parameters, regime) {
+        // Higher fees should be rewarded in volatile regimes
+        if (regime.includes('HIGH_VOLATILITY') && parameters.feeRate > 30) {
+            return 0.3;
+        }
+        
+        // Lower fees should be rewarded in stable regimes
+        if (regime.includes('LOW_VOLATILITY') && parameters.feeRate < 15) {
+            return 0.3;
+        }
+        
+        return 0;
+    }
+
+    /**
+     * Get current ROI strategy status
+     */
+    getROIStrategyStatus() {
+        return this.roiStrategy ? this.roiStrategy.getStrategyStatus() : null;
+    }
+
+    /**
+     * Force ROI strategy update from performance data
+     */
+    updateROIStrategy() {
+        if (this.roiStrategy) {
+            this.roiStrategy.updateStrategyFromPerformance();
+        }
     }
 }

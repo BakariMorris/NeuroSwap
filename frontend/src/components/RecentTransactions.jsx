@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Filter
 } from 'lucide-react'
+import { testnetDataService } from '../services/testnetData'
 
 const RecentTransactions = () => {
   const [transactions, setTransactions] = useState([])
@@ -16,50 +17,36 @@ const RecentTransactions = () => {
   const [sortBy, setSortBy] = useState('timestamp')
 
   useEffect(() => {
-    // Generate mock transaction data
-    const generateTransactions = () => {
-      const types = ['swap', 'add_liquidity', 'remove_liquidity', 'bridge']
-      const tokens = ['ETH', 'USDC', 'USDT', 'DAI', 'LINK', 'UNI', 'WBTC']
-      const chains = ['Zircuit', 'Arbitrum', 'Optimism', 'Base', 'Polygon']
-      const mockTxs = []
-
-      for (let i = 0; i < 20; i++) {
-        const type = types[Math.floor(Math.random() * types.length)]
-        const token0 = tokens[Math.floor(Math.random() * tokens.length)]
-        let token1 = tokens[Math.floor(Math.random() * tokens.length)]
-        while (token1 === token0) {
-          token1 = tokens[Math.floor(Math.random() * tokens.length)]
+    // Load real transaction data from testnet data service
+    const loadTransactions = async () => {
+      try {
+        await testnetDataService.initialize()
+        const systemData = testnetDataService.getSystemData()
+        
+        if (systemData && systemData.transactions) {
+          setTransactions(systemData.transactions)
+        } else {
+          // If no real transactions, show empty state
+          setTransactions([])
         }
-        
-        const chain = chains[Math.floor(Math.random() * chains.length)]
-        const amount = Math.random() * 10000 + 100
-        const timestamp = Date.now() - Math.random() * 3600000 // Last hour
-        const aiOptimized = Math.random() > 0.3
-        
-        mockTxs.push({
-          id: `0x${Math.random().toString(16).substr(2, 8)}...${Math.random().toString(16).substr(2, 4)}`,
-          type,
-          tokens: type === 'bridge' ? [token0] : [token0, token1],
-          amount: amount.toFixed(2),
-          usdValue: (amount * (Math.random() * 2000 + 500)).toFixed(0),
-          chain,
-          fromChain: type === 'bridge' ? chain : null,
-          toChain: type === 'bridge' ? chains[Math.floor(Math.random() * chains.length)] : null,
-          user: `0x${Math.random().toString(16).substr(2, 6)}...${Math.random().toString(16).substr(2, 4)}`,
-          timestamp,
-          status: Math.random() > 0.1 ? 'completed' : 'pending',
-          gasUsed: Math.floor(Math.random() * 200000 + 50000),
-          gasPrice: Math.random() * 50 + 10,
-          aiOptimized,
-          savings: aiOptimized ? Math.random() * 20 + 5 : 0,
-          slippage: Math.random() * 0.5 + 0.1
-        })
+      } catch (error) {
+        console.error('Error loading transactions:', error)
+        setTransactions([])
       }
-
-      return mockTxs.sort((a, b) => b.timestamp - a.timestamp)
     }
 
-    setTransactions(generateTransactions())
+    loadTransactions()
+    
+    // Subscribe to real-time updates
+    const unsubscribe = testnetDataService.subscribe((data) => {
+      if (data.transactions) {
+        setTransactions(data.transactions)
+      }
+    })
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [])
 
   const getTypeIcon = (type) => {
