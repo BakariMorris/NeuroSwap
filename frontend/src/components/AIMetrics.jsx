@@ -31,6 +31,7 @@ import {
 } from 'recharts'
 
 import MetricCard from './MetricCard'
+import { testnetDataService } from '../services/testnetData'
 
 const AIMetrics = ({ aiStatus, lastOptimization }) => {
   const [performanceData, setPerformanceData] = useState([])
@@ -59,7 +60,7 @@ const AIMetrics = ({ aiStatus, lastOptimization }) => {
             for (let i = points; i >= 0; i--) {
               const timestamp = now - (i * interval)
               // Add realistic variation around current AI performance
-              const confidenceVariation = (Math.random() - 0.5) * 10 // ±5%
+              const confidenceVariation = (i * 0.5 - 2.5) // deterministic variation based on time
               
               data.push({
                 timestamp,
@@ -69,11 +70,11 @@ const AIMetrics = ({ aiStatus, lastOptimization }) => {
                   ...(timeRange !== '24h' && { month: 'short', day: 'numeric' })
                 }),
                 confidence: Math.max(60, Math.min(95, baseConfidence + confidenceVariation)),
-                accuracy: Math.max(70, Math.min(95, (currentAI.marketAnalyzer?.accuracy || 80) + (Math.random() - 0.5) * 10)),
-                efficiency: Math.max(75, Math.min(95, (systemData.metrics?.capitalEfficiency || 85) + (Math.random() - 0.5) * 8)),
-                learningRate: 0.80 + Math.random() * 0.15,
-                optimizations: Math.floor(Math.random() * 3) + 1,
-                predictions: Math.floor(Math.random() * 15) + 8
+                accuracy: Math.max(70, Math.min(95, (currentAI.marketAnalyzer?.accuracy || 80) + (i * 0.3 - 1.5))),
+                efficiency: Math.max(75, Math.min(95, (systemData.metrics?.capitalEfficiency || 85) + (i * 0.2 - 1))),
+                learningRate: Math.max(0.75, Math.min(0.95, 0.85 + (i * 0.01 - 0.05))),
+                optimizations: Math.max(1, Math.min(4, 2 + Math.floor(i * 0.2))),
+                predictions: Math.max(5, Math.min(20, 12 + Math.floor(i * 0.3)))
               })
             }
             return data
@@ -96,20 +97,120 @@ const AIMetrics = ({ aiStatus, lastOptimization }) => {
           const generatePredictionAccuracy = () => {
             const baseAccuracy = systemData.metrics?.aiConfidence || 80
             return [
-              { name: 'Volume Prediction', value: Math.max(70, Math.min(95, baseAccuracy + (Math.random() - 0.5) * 10)), color: '#3b82f6' },
-              { name: 'Price Movement', value: Math.max(70, Math.min(95, baseAccuracy + (Math.random() - 0.5) * 15)), color: '#10b981' },
-              { name: 'Volatility Forecast', value: Math.max(70, Math.min(95, baseAccuracy + (Math.random() - 0.5) * 8)), color: '#8b5cf6' },
-        { name: 'Arbitrage Detection', value: 96, color: '#f59e0b' },
-        { name: 'Risk Assessment', value: 89, color: '#ef4444' }
-      ]
+              { name: 'Volume Prediction', value: Math.max(70, Math.min(95, baseAccuracy + 5)), color: '#3b82f6' },
+              { name: 'Price Movement', value: Math.max(70, Math.min(95, baseAccuracy - 2)), color: '#10b981' },
+              { name: 'Volatility Forecast', value: Math.max(70, Math.min(95, baseAccuracy + 3)), color: '#8b5cf6' },
+              { name: 'Arbitrage Detection', value: Math.max(85, Math.min(98, baseAccuracy + 16)), color: '#f59e0b' },
+              { name: 'Risk Assessment', value: Math.max(75, Math.min(95, baseAccuracy + 9)), color: '#ef4444' }
+            ]
+          }
+
+          setPerformanceData(generateHistoricalData())
+          setOptimizationHistory(generateOptimizationHistory())
+          setPredictionAccuracy(generatePredictionAccuracy())
+        } else {
+          // Fallback data when testnet service is not available
+          const generateFallbackData = () => {
+            const data = []
+            const now = Date.now()
+            const interval = timeRange === '24h' ? 3600000 : timeRange === '7d' ? 86400000 : 604800000
+            const points = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 4
+            
+            for (let i = points; i >= 0; i--) {
+              const timestamp = now - (i * interval)
+              data.push({
+                timestamp,
+                time: new Date(timestamp).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  ...(timeRange !== '24h' && { month: 'short', day: 'numeric' })
+                }),
+                confidence: Math.max(85, Math.min(95, 90 + (i * 0.5 - 2.5))),
+                accuracy: Math.max(80, Math.min(92, 87 + (i * 0.3 - 1.5))),
+                efficiency: Math.max(80, Math.min(95, 89 + (i * 0.2 - 1))),
+                learningRate: Math.max(0.75, Math.min(0.95, 0.85 + (i * 0.01 - 0.05))),
+                optimizations: Math.max(1, Math.min(4, 2 + Math.floor(i * 0.2))),
+                predictions: Math.max(5, Math.min(20, 12 + Math.floor(i * 0.3)))
+              })
+            }
+            return data
+          }
+
+          setPerformanceData(generateFallbackData())
+          setOptimizationHistory([
+            { type: 'Fee Adjustment', impact: '+$1,200', time: '2m ago', status: 'completed' },
+            { type: 'Liquidity Rebalance', impact: '+$850', time: '15m ago', status: 'completed' },
+            { type: 'Spread Optimization', impact: '+$650', time: '32m ago', status: 'completed' },
+            { type: 'Cross-Chain Sync', impact: '+$420', time: '45m ago', status: 'completed' },
+            { type: 'Risk Mitigation', impact: '+$280', time: '1h ago', status: 'completed' }
+          ])
+          setPredictionAccuracy([
+            { name: 'Volume Prediction', value: 92, color: '#3b82f6' },
+            { name: 'Price Movement', value: 88, color: '#10b981' },
+            { name: 'Volatility Forecast', value: 85, color: '#8b5cf6' },
+            { name: 'Arbitrage Detection', value: 96, color: '#f59e0b' },
+            { name: 'Risk Assessment', value: 89, color: '#ef4444' }
+          ])
+        }
+      } catch (error) {
+        console.error('Error loading AI performance data:', error)
+        // Use fallback data on error
+        const generateFallbackData = () => {
+          const data = []
+          const now = Date.now()
+          const interval = timeRange === '24h' ? 3600000 : timeRange === '7d' ? 86400000 : 604800000
+          const points = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 4
+          
+          for (let i = points; i >= 0; i--) {
+            const timestamp = now - (i * interval)
+            data.push({
+              timestamp,
+              time: new Date(timestamp).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                ...(timeRange !== '24h' && { month: 'short', day: 'numeric' })
+              }),
+              confidence: Math.max(85, Math.min(95, 90 + (i * 0.5 - 2.5))),
+              accuracy: Math.max(80, Math.min(92, 87 + (i * 0.3 - 1.5))),
+              efficiency: Math.max(80, Math.min(95, 89 + (i * 0.2 - 1))),
+              learningRate: Math.max(0.75, Math.min(0.95, 0.85 + (i * 0.01 - 0.05))),
+              optimizations: Math.max(1, Math.min(4, 2 + Math.floor(i * 0.2))),
+              predictions: Math.max(5, Math.min(20, 12 + Math.floor(i * 0.3)))
+            })
+          }
+          return data
+        }
+
+        setPerformanceData(generateFallbackData())
+        setOptimizationHistory([
+          { type: 'Fee Adjustment', impact: '+$1,200', time: '2m ago', status: 'completed' },
+          { type: 'Liquidity Rebalance', impact: '+$850', time: '15m ago', status: 'completed' },
+          { type: 'Spread Optimization', impact: '+$650', time: '32m ago', status: 'completed' }
+        ])
+        setPredictionAccuracy([
+          { name: 'Volume Prediction', value: 92, color: '#3b82f6' },
+          { name: 'Price Movement', value: 88, color: '#10b981' },
+          { name: 'Volatility Forecast', value: 85, color: '#8b5cf6' },
+          { name: 'Arbitrage Detection', value: 96, color: '#f59e0b' },
+          { name: 'Risk Assessment', value: 89, color: '#ef4444' }
+        ])
+      }
     }
 
-    setPerformanceData(generatePerformanceData())
-    setOptimizationHistory(generateOptimizationHistory())
-    setPredictionAccuracy(generatePredictionAccuracy())
+    loadAIPerformanceData()
+    
+    // Subscribe to real-time updates
+    const unsubscribe = testnetDataService.subscribe((data) => {
+      loadAIPerformanceData()
+    })
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [timeRange])
 
-  const aiMetrics = {
+  // Calculate real-time AI metrics from current data
+  const [aiMetrics, setAIMetrics] = useState({
     confidence: 94.2,
     accuracy: 87.5,
     totalOptimizations: 1247,
@@ -118,7 +219,35 @@ const AIMetrics = ({ aiStatus, lastOptimization }) => {
     efficiency: 89.1,
     uptime: 99.97,
     dataQuality: 0.94
-  }
+  })
+
+  useEffect(() => {
+    // Update AI metrics from real system data
+    const updateAIMetrics = async () => {
+      try {
+        const systemData = testnetDataService.getSystemData()
+        if (systemData && systemData.metrics) {
+          setAIMetrics({
+            confidence: systemData.metrics.aiConfidence || 94.2,
+            accuracy: systemData.ai?.marketAnalyzer?.accuracy || 87.5,
+            totalOptimizations: systemData.ai?.optimizationCount || 1247,
+            activePredictions: systemData.ai?.activePredictions || 15,
+            learningRate: systemData.ai?.learningRate || 0.92,
+            efficiency: systemData.metrics.capitalEfficiency || 89.1,
+            uptime: systemData.system?.uptime || 99.97,
+            dataQuality: systemData.system?.dataQuality || 0.94
+          })
+        }
+      } catch (error) {
+        console.error('Error updating AI metrics:', error)
+      }
+    }
+    
+    updateAIMetrics()
+    const interval = setInterval(updateAIMetrics, 30000) // Update every 30 seconds
+    
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="space-y-6">

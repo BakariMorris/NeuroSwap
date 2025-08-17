@@ -18,6 +18,7 @@ import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
 import { realTimeTradingService } from '../services/realTimeTradingService'
 import { livePriceService } from '../services/livePriceService'
+import { testnetDataService } from '../services/testnetData'
 
 const TradingInterface = () => {
   const [fromToken, setFromToken] = useState('ETH')
@@ -112,18 +113,26 @@ const TradingInterface = () => {
     const loadBalances = async () => {
       if (serviceInitialized && tokens.length > 0) {
         try {
-          // For demo purposes, we'll use a mock address
-          // In real app, this would come from connected wallet
-          const mockUserAddress = '0x742d35cc6bf94d82e6b7b82b3cc3a3a5f7d4b5e6'
-          const balances = await realTimeTradingService.getTokenBalances(selectedChain, mockUserAddress)
+          // Get real user address from testnet data service
+          await testnetDataService.initialize()
+          const systemData = testnetDataService.getSystemData()
+          const userAddress = systemData?.userAddress || systemData?.connectedWallet?.address
+          
+          if (!userAddress) {
+            console.warn('No connected wallet address found')
+            setUserBalances({})
+            return
+          }
+          
+          const balances = await realTimeTradingService.getTokenBalances(selectedChain, userAddress)
           setUserBalances(balances)
         } catch (error) {
           console.warn('Could not load token balances:', error.message)
-          // Set fallback balances
+          // Set empty balances instead of random ones
           const fallbackBalances = {}
           tokens.forEach(token => {
             fallbackBalances[token.symbol] = {
-              formatted: (Math.random() * 1000 + 10).toFixed(4),
+              formatted: '0.0000',
               raw: '0'
             }
           })
@@ -219,24 +228,78 @@ const TradingInterface = () => {
     setIsLoading(true)
     
     try {
-      // Simulate transaction
       toast.loading('Executing AI-optimized trade...', { id: 'trade' })
       
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Get real user address and contract data
+      await testnetDataService.initialize()
+      const systemData = testnetDataService.getSystemData()
+      const userAddress = systemData?.userAddress || systemData?.connectedWallet?.address
       
-      toast.success(
-        `Successfully swapped ${fromAmount} ${fromToken} for ${toAmount} ${toToken}!`,
-        { id: 'trade' }
-      )
+      if (!userAddress) {
+        throw new Error('No wallet connected. Please connect your wallet to trade.')
+      }
       
-      // Reset form
-      setFromAmount('')
-      setToAmount('')
-      setPriceData(null)
-      setAiOptimization(null)
+      // Get trading contract for selected chain
+      const tradingContract = systemData?.contracts?.trading?.[selectedChain]
+      if (!tradingContract) {
+        throw new Error(`Trading contract not available for ${selectedChain}`)
+      }
+      
+      // Prepare real transaction data
+      const tradeParams = {
+        chainId: selectedChain,
+        fromToken,
+        toToken,
+        fromAmount,
+        toAmount,
+        slippageTolerance,
+        userAddress,
+        aiOptimization: aiOptimization || {},
+        deadline: Math.floor(Date.now() / 1000) + 1800 // 30 minutes
+      }
+      
+      // Execute trade through trading service
+      const result = await realTimeTradingService.executeTrade(tradeParams)
+      
+      if (result.success) {
+        toast.success(
+          `Trade submitted! ${fromAmount} ${fromToken} for ${toAmount} ${toToken}`,
+          { id: 'trade' }
+        )
+        
+        // Store transaction in system data
+        try {
+          await testnetDataService.addTransaction({
+            id: result.txHash || `trade_${Date.now()}`,
+            type: 'swap',
+            tokens: [fromToken, toToken],
+            amounts: [fromAmount, toAmount],
+            chain: selectedChain,
+            status: 'pending',
+            timestamp: Date.now(),
+            txHash: result.txHash,
+            aiOptimized: aiOptimization?.enabled || false,
+            savings: aiOptimization?.savingsUsd || 0,
+            gasUsed: aiOptimization?.estimatedGas || 0,
+            slippage: priceData?.priceImpact || 0,
+            usdValue: parseFloat(fromAmount) * (livePrices[fromToken]?.price || 1)
+          })
+        } catch (error) {
+          console.warn('Failed to store transaction:', error)
+        }
+        
+        // Reset form
+        setFromAmount('')
+        setToAmount('')
+        setPriceData(null)
+        setAiOptimization(null)
+      } else {
+        throw new Error(result.error || 'Trade execution failed')
+      }
       
     } catch (error) {
-      toast.error('Transaction failed. Please try again.', { id: 'trade' })
+      console.error('Trade execution error:', error)
+      toast.error(`Trade failed: ${error.message}`, { id: 'trade' })
     } finally {
       setIsLoading(false)
     }

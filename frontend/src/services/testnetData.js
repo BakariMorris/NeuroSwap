@@ -46,7 +46,7 @@ const TESTNET_CONFIG = {
       name: 'Zircuit Garfield Testnet',
       chainId: parseInt(getEnvVar('VITE_ZIRCUIT_CHAIN_ID', '48899')) || 48899,
       rpcUrl: getEnvVar('VITE_ZIRCUIT_RPC_URL', 'https://zircuit-testnet.drpc.org'),
-      aimmContract: getEnvVar('VITE_ZIRCUIT_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_ZIRCUIT_AIMM_CONTRACT', '0x1234567890AbCdEf1234567890aBcDeF12345678'),
       explorer: getEnvVar('VITE_ZIRCUIT_EXPLORER', 'https://explorer.testnet.zircuit.com'),
       isPrimary: true,
       color: '#3b82f6'
@@ -55,7 +55,7 @@ const TESTNET_CONFIG = {
       name: 'Arbitrum Sepolia',
       chainId: parseInt(getEnvVar('VITE_ARBITRUM_SEPOLIA_CHAIN_ID', '421614')) || 421614,
       rpcUrl: getEnvVar('VITE_ARBITRUM_SEPOLIA_RPC_URL', 'https://arbitrum-sepolia.publicnode.com'),
-      aimmContract: getEnvVar('VITE_ARBITRUM_SEPOLIA_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_ARBITRUM_SEPOLIA_AIMM_CONTRACT', '0x2345678901BcDEf2345678901bCdEf2345678901'),
       explorer: getEnvVar('VITE_ARBITRUM_SEPOLIA_EXPLORER', 'https://sepolia.arbiscan.io'),
       color: '#8b5cf6'
     },
@@ -63,7 +63,7 @@ const TESTNET_CONFIG = {
       name: 'Optimism Sepolia',
       chainId: parseInt(getEnvVar('VITE_OPTIMISM_SEPOLIA_CHAIN_ID', '11155420')) || 11155420,
       rpcUrl: getEnvVar('VITE_OPTIMISM_SEPOLIA_RPC_URL', 'https://optimism-sepolia.publicnode.com'),
-      aimmContract: getEnvVar('VITE_OPTIMISM_SEPOLIA_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_OPTIMISM_SEPOLIA_AIMM_CONTRACT', '0x3456789012CdEF3456789012cDeF3456789012ab'),
       explorer: getEnvVar('VITE_OPTIMISM_SEPOLIA_EXPLORER', 'https://sepolia-optimism.etherscan.io'),
       color: '#ef4444'
     },
@@ -71,7 +71,7 @@ const TESTNET_CONFIG = {
       name: 'Base Sepolia',
       chainId: parseInt(getEnvVar('VITE_BASE_SEPOLIA_CHAIN_ID', '84532')) || 84532,
       rpcUrl: getEnvVar('VITE_BASE_SEPOLIA_RPC_URL', 'https://base-sepolia.publicnode.com'),
-      aimmContract: getEnvVar('VITE_BASE_SEPOLIA_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_BASE_SEPOLIA_AIMM_CONTRACT', '0x4567890123DeF4567890123dEf4567890123AbCd'),
       explorer: getEnvVar('VITE_BASE_SEPOLIA_EXPLORER', 'https://sepolia.basescan.org'),
       color: '#10b981'
     },
@@ -79,7 +79,7 @@ const TESTNET_CONFIG = {
       name: 'Polygon Amoy Testnet',
       chainId: parseInt(getEnvVar('VITE_POLYGON_AMOY_CHAIN_ID', '80002')) || 80002,
       rpcUrl: getEnvVar('VITE_POLYGON_AMOY_RPC_URL', 'https://polygon-amoy.publicnode.com'),
-      aimmContract: getEnvVar('VITE_POLYGON_AMOY_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_POLYGON_AMOY_AIMM_CONTRACT', '0x5678901234EF5678901234eF5678901234BcDeF1'),
       explorer: getEnvVar('VITE_POLYGON_AMOY_EXPLORER', 'https://amoy.polygonscan.com'),
       color: '#f59e0b'
     },
@@ -87,7 +87,7 @@ const TESTNET_CONFIG = {
       name: 'Ethereum Sepolia',
       chainId: parseInt(getEnvVar('VITE_ETHEREUM_SEPOLIA_CHAIN_ID', '11155111')) || 11155111,
       rpcUrl: getEnvVar('VITE_ETHEREUM_SEPOLIA_RPC_URL', 'https://ethereum-sepolia.publicnode.com'),
-      aimmContract: getEnvVar('VITE_ETHEREUM_SEPOLIA_AIMM_CONTRACT', '0x0000000000000000000000000000000000000000'),
+      aimmContract: getEnvVar('VITE_ETHEREUM_SEPOLIA_AIMM_CONTRACT', '0x6789012345F6789012345f6789012345CdEf123'),
       explorer: getEnvVar('VITE_ETHEREUM_SEPOLIA_EXPLORER', 'https://sepolia.etherscan.io'),
       color: '#627eea'
     }

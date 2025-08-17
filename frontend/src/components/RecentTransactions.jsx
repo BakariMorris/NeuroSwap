@@ -180,9 +180,9 @@ const RecentTransactions = () => {
                   
                   <div className="text-sm text-gray-600">
                     {tx.type === 'bridge' ? (
-                      <span>{tx.tokens[0]} • {tx.fromChain} → {tx.toChain}</span>
+                      <span>{(tx.tokens && tx.tokens[0]) || 'Unknown'} • {tx.fromChain || 'Unknown'} → {tx.toChain || 'Unknown'}</span>
                     ) : (
-                      <span>{tx.tokens.join(' / ')} • {tx.chain}</span>
+                      <span>{(tx.tokens && tx.tokens.length > 0) ? tx.tokens.join(' / ') : 'Unknown'} • {tx.chain || 'Unknown'}</span>
                     )}
                   </div>
                 </div>
@@ -190,7 +190,7 @@ const RecentTransactions = () => {
               
               <div className="text-right">
                 <div className="font-medium text-gray-900">
-                  ${parseFloat(tx.usdValue).toLocaleString()}
+                  ${parseFloat(tx.usdValue || 0).toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-600">
                   {formatTime(tx.timestamp)}
@@ -200,11 +200,11 @@ const RecentTransactions = () => {
             
             <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-100">
               <div className="flex items-center space-x-4 text-xs text-gray-600">
-                <span>Gas: {tx.gasUsed.toLocaleString()}</span>
-                <span>Slippage: {tx.slippage.toFixed(2)}%</span>
-                {tx.aiOptimized && (
+                <span>Gas: {(tx.gasUsed || 0).toLocaleString()}</span>
+                <span>Slippage: {(tx.slippage || 0).toFixed(2)}%</span>
+                {tx.aiOptimized && tx.savings !== undefined && (
                   <span className="text-green-600 font-medium">
-                    Saved ${tx.savings.toFixed(0)}
+                    Saved ${(tx.savings || 0).toFixed(0)}
                   </span>
                 )}
               </div>
