@@ -24,25 +24,12 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
-      external: (id) => {
-        if (id.includes('@safe-globalThis/safe-apps-provider') || 
-            id.includes('@safe-globalThis/safe-apps-sdk') ||
-            id.includes('@safe-global/safe-apps-provider') || 
-            id.includes('@safe-global/safe-apps-sdk')) {
-          return true;
-        }
-        return false;
-      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           web3: ['ethers', 'wagmi', '@rainbow-me/rainbowkit'],
           charts: ['recharts']
         },
-        paths: {
-          '@safe-globalThis/safe-apps-provider': './node_modules/@safe-global/safe-apps-provider',
-          '@safe-globalThis/safe-apps-sdk': './node_modules/@safe-global/safe-apps-sdk'
-        }
       }
     }
   },
