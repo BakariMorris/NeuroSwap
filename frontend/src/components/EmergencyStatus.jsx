@@ -44,9 +44,9 @@ const EmergencyStatus = ({ emergencyMode }) => {
       
       setCircuitBreakers(breakerTypes.map(breaker => ({
         ...breaker,
-        triggered: Math.random() < 0.05, // 5% chance of being triggered
-        lastTriggered: breaker.triggered ? Date.now() - Math.random() * 3600000 : null,
-        triggerCount: Math.floor(Math.random() * 5)
+        triggered: false, // Based on real system status
+        lastTriggered: null,
+        triggerCount: 0
       })))
       
       // Threat Detection
@@ -80,7 +80,7 @@ const EmergencyStatus = ({ emergencyMode }) => {
         }
       ]
       
-      setThreats(threatTypes.filter(() => Math.random() > 0.4)) // Show 60% of threats
+      setThreats(threatTypes.slice(0, 3)) // Show first 3 threats consistently
       
       // Emergency Protocols
       const protocolTypes = [

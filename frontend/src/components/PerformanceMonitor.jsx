@@ -63,6 +63,38 @@ const PerformanceMonitor = ({ systemData }) => {
       setAlerts(generateAlerts(dataSource))
     }
 
+    // Helper functions for market regime adjustments
+    const getRegimeAdjustment = (regime) => {
+      switch (regime) {
+        case 'HIGH_VOLATILITY':
+          return { efficiency: 0.9, satisfaction: 0.85, profitability: 1.2 }
+        case 'LOW_VOLATILITY':
+          return { efficiency: 1.1, satisfaction: 1.05, profitability: 0.95 }
+        case 'DIVERGENT':
+          return { efficiency: 0.8, satisfaction: 0.8, profitability: 1.3 }
+        default:
+          return { efficiency: 1.0, satisfaction: 1.0, profitability: 1.0 }
+      }
+    }
+
+    const calculateStressLevel = (avgVolatility, regime) => {
+      let stress = avgVolatility * 0.6 // Base stress from volatility
+      
+      switch (regime) {
+        case 'HIGH_VOLATILITY':
+          stress += 0.3
+          break
+        case 'DIVERGENT':
+          stress += 0.4
+          break
+        case 'LOW_VOLATILITY':
+          stress -= 0.1
+          break
+      }
+      
+      return Math.min(Math.max(stress, 0), 1)
+    }
+
     // Generate comprehensive performance data
     const generatePerformanceData = (systemData) => {
       const data = []
