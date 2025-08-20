@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { testnetDataService } from '../services/testnetData'
+import { realTimeVolatilityService } from '../services/realTimeVolatility'
 import { 
   Activity, 
   TrendingUp, 
@@ -40,6 +41,8 @@ const PerformanceMonitor = ({ systemData }) => {
   const [alerts, setAlerts] = useState([])
   const [systemHealth, setSystemHealth] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [volatilityData, setVolatilityData] = useState(null)
+  const [marketRegime, setMarketRegime] = useState('NORMAL')
 
   useEffect(() => {
     // Load real data if systemData not provided
@@ -55,9 +58,9 @@ const PerformanceMonitor = ({ systemData }) => {
         }
       }
       
-      generatePerformanceData(dataSource)
-      generateSystemHealth(dataSource)
-      generateAlerts(dataSource)
+      setPerformanceData(generatePerformanceData(dataSource))
+      setSystemHealth(generateSystemHealth(dataSource))
+      setAlerts(generateAlerts(dataSource))
     }
 
     // Generate comprehensive performance data
@@ -70,6 +73,16 @@ const PerformanceMonitor = ({ systemData }) => {
       for (let i = points; i >= 0; i--) {
         const timestamp = now - (i * interval)
         
+        // Get real-time volatility for ETH (primary asset)
+        const ethVolatility = volatilityData?.ETH || null
+        const avgVolatility = volatilityData ? 
+          Object.values(volatilityData).reduce((sum, vol) => sum + (vol.current || 0.5), 0) / Object.keys(volatilityData).length :
+          0.5
+
+        // Adjust metrics based on real-time volatility and market regime
+        const volatilityMultiplier = ethVolatility ? (1 + (ethVolatility.current - 0.5) * 0.3) : 1
+        const regimeAdjustment = getRegimeAdjustment(marketRegime)
+        
         data.push({
           timestamp,
           time: new Date(timestamp).toLocaleTimeString('en-US', { 
@@ -77,25 +90,31 @@ const PerformanceMonitor = ({ systemData }) => {
             minute: '2-digit',
             ...(timeRange !== '24h' && { month: 'short', day: 'numeric' })
           }),
-          efficiency: systemData?.metrics?.capitalEfficiency || 85,
-          volume: systemData?.metrics?.dailyVolume || 1500000,
+          efficiency: (systemData?.metrics?.capitalEfficiency || 85) * regimeAdjustment.efficiency,
+          volume: (systemData?.metrics?.dailyVolume || 1500000) * volatilityMultiplier,
           tvl: systemData?.metrics?.totalValueLocked || 17500000,
-          slippage: systemData?.metrics?.avgSlippage || 0.12,
+          slippage: (systemData?.metrics?.avgSlippage || 0.12) * volatilityMultiplier,
           gasOptimization: systemData?.ai?.gasOptimization || 20,
-          aiConfidence: systemData?.metrics?.aiConfidence || 87,
-          arbitrageCount: systemData?.ai?.arbitrageOpportunities || 12,
+          aiConfidence: (systemData?.metrics?.aiConfidence || 87) * (ethVolatility?.confidence || 1),
+          arbitrageCount: Math.floor((systemData?.ai?.arbitrageOpportunities || 12) * volatilityMultiplier),
           rebalanceCount: systemData?.ai?.liquidityRebalances || 3,
           emergencyTriggers: systemData?.emergency?.circuitBreakers?.filter(cb => cb.triggered)?.length || 0,
-          userSatisfaction: systemData?.metrics?.userSatisfaction || 92,
-          profitability: systemData?.metrics?.profitability || 8.5,
-          responseTime: systemData?.system?.averageLatency || 89
+          userSatisfaction: (systemData?.metrics?.userSatisfaction || 92) * regimeAdjustment.satisfaction,
+          profitability: (systemData?.metrics?.profitability || 8.5) * regimeAdjustment.profitability,
+          responseTime: systemData?.system?.averageLatency || 89,
+          // Real-time volatility metrics
+          marketVolatility: avgVolatility,
+          volatilityTrend: ethVolatility ? (ethVolatility.predicted - ethVolatility.current) : 0,
+          marketRegime: marketRegime,
+          volatilityConfidence: ethVolatility?.confidence || 0.5,
+          stressIndicator: calculateStressLevel(avgVolatility, marketRegime)
         })
       }
       return data
     }
 
     // Generate system health metrics
-    const generateSystemHealth = () => {
+    const generateSystemHealth = (systemData) => {
       return {
         overall: 94.2,
         components: {
@@ -116,7 +135,7 @@ const PerformanceMonitor = ({ systemData }) => {
     }
 
     // Generate alerts
-    const generateAlerts = () => {
+    const generateAlerts = (systemData) => {
       const alertTypes = [
         {
           id: 'alert_1',
@@ -152,12 +171,32 @@ const PerformanceMonitor = ({ systemData }) => {
       return activeAlerts.length > 0 ? activeAlerts : alertTypes.slice(0, 3) // Show first 3 if no real alerts
     }
 
-    setPerformanceData(generatePerformanceData(dataSource))
-    setSystemHealth(generateSystemHealth(dataSource))
-    setAlerts(generateAlerts(dataSource))
+    // Load real-time volatility data
+    const loadVolatilityData = async () => {
+      try {
+        if (realTimeVolatilityService.isInitialized) {
+          const volatilities = realTimeVolatilityService.getAllVolatilities()
+          const regime = realTimeVolatilityService.getMarketRegime()
+          
+          setVolatilityData(volatilities)
+          setMarketRegime(regime)
+          
+          // Subscribe to real-time updates
+          const unsubscribe = realTimeVolatilityService.subscribe((newVolatilityData) => {
+            setVolatilityData(newVolatilityData)
+            setMarketRegime(realTimeVolatilityService.getMarketRegime())
+          })
+          
+          // Cleanup subscription on unmount
+          return () => unsubscribe()
+        }
+      } catch (error) {
+        console.warn('Failed to load volatility data:', error)
+      }
     }
 
     loadPerformanceData()
+    loadVolatilityData()
   }, [timeRange, systemData])
 
   const getAlertIcon = (level) => {
