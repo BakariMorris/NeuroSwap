@@ -20,7 +20,9 @@
     "@openzeppelin/contracts": "^5.4.0",
     "@tensorflow/tfjs-node": "^4.22.0",
     "axios": "^1.11.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "mathjs": "^14.6.0",
     "ml-matrix": "^6.12.1",
     "ws": "^8.18.3"
