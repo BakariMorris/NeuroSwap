@@ -4,7 +4,8 @@
  */
 
 import { ethers } from 'ethers'
-import { advancedMarketPredictionEngine, setTestnetDataService } from './advancedAI.js'
+import { advancedMarketPredictionEngine, setTestnetDataService, setVolatilityService } from './advancedAI.js'
+import { realTimeVolatilityService } from './realTimeVolatility.js'
 import axios from 'axios'
 
 // AIMM Contract ABI (simplified for demo)
@@ -107,6 +108,7 @@ class TestnetDataService {
     
     // Set up circular dependency resolution
     setTestnetDataService(this)
+    setVolatilityService(realTimeVolatilityService)
   }
 
   initializeProviders() {
@@ -119,10 +121,11 @@ class TestnetDataService {
           ensAddress: null
         }
         
-        // Create provider with simpler configuration to avoid staticNetwork.matches error
+        // Create provider with explicit network configuration to prevent ENS errors
         const provider = new ethers.JsonRpcProvider(config.rpcUrl, {
           name: config.name.toLowerCase().replace(/\s+/g, '-'),
-          chainId: config.chainId
+          chainId: config.chainId,
+          ensAddress: null // Explicitly disable ENS for testnets
         })
         
         this.providers.set(chainKey, provider)
@@ -181,6 +184,10 @@ class TestnetDataService {
       // Initialize advanced AI prediction engine
       console.log('🧠 Starting Advanced AI Prediction Engine...')
       await advancedMarketPredictionEngine.initialize()
+
+      // Initialize real-time volatility service
+      console.log('📊 Starting Real-Time Volatility Service...')
+      await realTimeVolatilityService.initialize()
 
       // Test provider connections with timeout  
       await this.testProviderConnections()
@@ -258,9 +265,20 @@ class TestnetDataService {
         const contract = this.contracts.get(chainKey)
         
         if (provider && contract) {
-          // Check if contract exists
-          const code = await provider.getCode(config.aimmContract)
-          const isDeployed = code !== '0x'
+          // Check if contract exists with timeout and ENS error handling
+          let isDeployed = false
+          try {
+            const code = await this.withTimeout(
+              provider.getCode(config.aimmContract),
+              5000,
+              'Contract code check timeout'
+            )
+            isDeployed = code !== '0x'
+          } catch (error) {
+            console.warn(`Contract check failed for ${config.name}:`, error.message)
+            // Don't fail completely, just mark as not deployed
+            isDeployed = false
+          }
           
           networks.push({
             name: config.name,

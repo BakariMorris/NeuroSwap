@@ -32,7 +32,7 @@ export const useAIOrchestrator = () => {
         
         // Set last optimization timestamp
         setLastOptimization({
-          timestamp: Date.now() - Math.random() * 300000, // Last 5 minutes
+          timestamp: systemData.ai?.lastOptimization || Date.now() - 180000, // Last 3 minutes default
           type: 'Parameter Adjustment',
           impact: '+$2,400',
           confidence: 94.2
@@ -45,7 +45,7 @@ export const useAIOrchestrator = () => {
             
             // Check for emergency conditions
             const riskScore = data.ai.emergencyManager?.riskScore || 0
-            const shouldTriggerEmergency = riskScore > 0.8 || Math.random() < 0.01 // 1% random chance
+            const shouldTriggerEmergency = riskScore > 0.8 // Based on actual risk assessment
             
             if (shouldTriggerEmergency && !emergencyMode) {
               setEmergencyMode(true)
@@ -90,8 +90,8 @@ export const useAIOrchestrator = () => {
       const optimization = {
         timestamp: Date.now(),
         type,
-        impact: `+$${(Math.random() * 5000 + 1000).toFixed(0)}`,
-        confidence: 85 + Math.random() * 12
+        impact: `+$${(2500).toFixed(0)}`, // Average optimization impact
+        confidence: aiStatus?.confidence || 90
       }
       
       setLastOptimization(optimization)
@@ -101,7 +101,7 @@ export const useAIOrchestrator = () => {
         ...prev,
         orchestrator: {
           ...prev.orchestrator,
-          confidence: Math.min(98, prev.orchestrator.confidence + Math.random() * 2)
+          confidence: Math.min(98, prev.orchestrator.confidence + 1)
         }
       }))
       
@@ -159,7 +159,7 @@ export const useAIOrchestrator = () => {
     if (!isConnected) return
     
     const interval = setInterval(() => {
-      const shouldOptimize = Math.random() < 0.3 // 30% chance every 30 seconds
+      const shouldOptimize = aiStatus?.autoOptimization !== false // Based on AI configuration
       if (shouldOptimize) {
         triggerOptimization('Automatic').catch(() => {
           // Silent fail for auto-optimization

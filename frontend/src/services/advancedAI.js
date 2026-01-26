@@ -8,11 +8,16 @@
  * - Signal Processing (Kalman Filters, Wavelets)
  */
 
-// Testnet data service reference - injected to avoid circular dependencies
+// Service references - injected to avoid circular dependencies
 let testnetDataService = null
+let volatilityService = null
 
 export function setTestnetDataService(service) {
   testnetDataService = service
+}
+
+export function setVolatilityService(service) {
+  volatilityService = service
 }
 
 class AdvancedMarketPredictionEngine {
@@ -1172,11 +1177,183 @@ class AdvancedMarketPredictionEngine {
     return volatility > 1.5 // 150% annual volatility threshold
   }
 
+  // AI-driven volatility strategy methods as per CLAUDE.md
+  calculateVolatilityMetrics(asset, realTimeVolatility, indicators) {
+    const metrics = {}
+    
+    if (realTimeVolatility) {
+      // VaR (Value at Risk) calculation
+      metrics.valueAtRisk = this.calculateVaR(asset, realTimeVolatility.current)
+      
+      // CVaR (Conditional Value at Risk)
+      metrics.conditionalVaR = this.calculateCVaR(asset, realTimeVolatility.current)
+      
+      // Volatility clustering detection
+      metrics.volatilityClustering = this.detectVolatilityClustering(asset)
+      
+      // GARCH-based volatility forecast
+      metrics.garchForecast = this.getGarchVolatilityForecast(asset)
+      
+      // Market stress indicator
+      metrics.stressIndicator = this.calculateStressIndicator(realTimeVolatility)
+      
+      // Regime persistence probability
+      metrics.regimePersistence = this.calculateRegimePersistence(realTimeVolatility.regime)
+    }
+    
+    return metrics
+  }
+
+  calculateVolatilityAdjustedPosition(basePosition, realTimeVolatility) {
+    if (!realTimeVolatility) return basePosition
+    
+    // Kelly Criterion with volatility adjustment
+    const vol = realTimeVolatility.current
+    const confidence = realTimeVolatility.confidence
+    
+    // Reduce position size in high volatility environments
+    let adjustment = 1.0
+    
+    if (vol > 1.0) {
+      adjustment = Math.max(0.1, 1.0 - (vol - 1.0) * 0.5)
+    } else if (vol < 0.3) {
+      adjustment = Math.min(2.0, 1.0 + (0.3 - vol) * 0.5)
+    }
+    
+    // Further adjust based on confidence
+    adjustment *= confidence
+    
+    return Math.min(basePosition * adjustment, 0.25) // Max 25% position
+  }
+
+  getVolatilityStrategy(realTimeVolatility) {
+    if (!realTimeVolatility) return 'CONSERVATIVE'
+    
+    const vol = realTimeVolatility.current
+    const regime = realTimeVolatility.regime
+    const confidence = realTimeVolatility.confidence
+    
+    if (regime === 'HIGH_VOLATILITY' && vol > 1.2) {
+      return confidence > 0.7 ? 'MOMENTUM' : 'DEFENSIVE'
+    } else if (regime === 'LOW_VOLATILITY' && vol < 0.3) {
+      return confidence > 0.8 ? 'ACCUMULATION' : 'CONSERVATIVE'
+    } else if (regime === 'DIVERGENT') {
+      return 'HEDGED'
+    }
+    
+    return 'BALANCED'
+  }
+
+  calculateVaR(asset, volatility, confidenceLevel = 0.95) {
+    // Historical simulation VaR
+    const data = this.historicalData.get(asset)
+    if (!data || data.returns.length < 100) {
+      // Parametric VaR fallback
+      const zScore = this.getZScore(confidenceLevel)
+      return volatility * zScore / Math.sqrt(252) // Daily VaR
+    }
+    
+    const returns = data.returns.slice(-100).sort((a, b) => a - b)
+    const varIndex = Math.floor((1 - confidenceLevel) * returns.length)
+    return Math.abs(returns[varIndex])
+  }
+
+  calculateCVaR(asset, volatility, confidenceLevel = 0.95) {
+    const var95 = this.calculateVaR(asset, volatility, confidenceLevel)
+    // CVaR is typically 1.3x VaR for normal distributions
+    return var95 * 1.3
+  }
+
+  detectVolatilityClustering(asset) {
+    const data = this.historicalData.get(asset)
+    if (!data || data.volatility.length < 20) return 0.5
+    
+    const recentVol = data.volatility.slice(-20)
+    let clusters = 0
+    
+    for (let i = 1; i < recentVol.length; i++) {
+      if (Math.abs(recentVol[i] - recentVol[i-1]) < recentVol[i] * 0.1) {
+        clusters++
+      }
+    }
+    
+    return clusters / (recentVol.length - 1)
+  }
+
+  getGarchVolatilityForecast(asset) {
+    const data = this.historicalData.get(asset)
+    if (!data || data.volatility.length < 10) return 0.5
+    
+    // Simplified GARCH(1,1) forecast
+    const latestVol = data.volatility[data.volatility.length - 1]
+    const avgVol = data.volatility.reduce((sum, vol) => sum + vol, 0) / data.volatility.length
+    
+    // Mean reversion component
+    const omega = 0.00001
+    const alpha = 0.1
+    const beta = 0.85
+    
+    return Math.sqrt(omega + alpha * Math.pow(latestVol, 2) + beta * Math.pow(avgVol, 2))
+  }
+
+  calculateStressIndicator(realTimeVolatility) {
+    const vol = realTimeVolatility.current
+    const confidence = realTimeVolatility.confidence
+    
+    // Stress level based on volatility and confidence
+    let stress = 0
+    
+    if (vol > 1.5) stress += 0.4
+    else if (vol > 1.0) stress += 0.2
+    
+    if (confidence < 0.5) stress += 0.3
+    else if (confidence < 0.7) stress += 0.1
+    
+    if (realTimeVolatility.regime === 'HIGH_VOLATILITY') stress += 0.2
+    else if (realTimeVolatility.regime === 'DIVERGENT') stress += 0.3
+    
+    return Math.min(stress, 1.0)
+  }
+
+  calculateRegimePersistence(regime) {
+    // Estimate probability that current regime will persist
+    const persistenceProbs = {
+      'HIGH_VOLATILITY': 0.7,  // High volatility tends to cluster
+      'LOW_VOLATILITY': 0.8,   // Low volatility periods are more stable
+      'DIVERGENT': 0.4,        // Divergent regimes are transitional
+      'NORMAL': 0.6            // Normal regimes are moderately persistent
+    }
+    
+    return persistenceProbs[regime] || 0.5
+  }
+
+  getZScore(confidenceLevel) {
+    // Z-scores for common confidence levels
+    const zScores = {
+      0.90: 1.282,
+      0.95: 1.645,
+      0.99: 2.326
+    }
+    return zScores[confidenceLevel] || 1.645
+  }
+
   // Public API methods
   getMarketPrediction(asset, timeframe = 'SHORT') {
     const signal = this.tradingSignals.get(asset)
     const indicators = this.technicalIndicators.get(asset)
     const models = this.statisticalModels.get(asset)
+    
+    // Get real-time volatility data if available
+    let realTimeVolatility = null
+    let volatilityPrediction = null
+    if (volatilityService) {
+      try {
+        realTimeVolatility = volatilityService.getRealTimeVolatility(asset)
+        volatilityPrediction = volatilityService.predictVolatility(asset, timeframe === 'SHORT' ? 1 : timeframe === 'MEDIUM' ? 6 : 24)
+      } catch (error) {
+        console.warn(`Failed to get real-time volatility for ${asset}:`, error.message)
+      }
+    }
     
     if (!signal || !indicators) {
       return {
@@ -1184,20 +1361,54 @@ class AdvancedMarketPredictionEngine {
         timeframe,
         prediction: 'NEUTRAL',
         confidence: 0,
-        error: 'Insufficient data'
+        error: 'Insufficient data',
+        volatility: realTimeVolatility?.current || 0.5,
+        predictedVolatility: volatilityPrediction?.volatility || 0.5,
+        marketRegime: realTimeVolatility?.regime || 'NORMAL'
       }
     }
+    
+    // Enhance confidence and signals with real-time volatility
+    let enhancedConfidence = signal.confidence
+    let enhancedStrength = signal.strength
+    let volatilityAdjustment = 1.0
+    
+    if (realTimeVolatility) {
+      // Adjust confidence based on volatility regime
+      switch (realTimeVolatility.regime) {
+        case 'HIGH_VOLATILITY':
+          enhancedConfidence *= 0.8 // Lower confidence in high volatility
+          volatilityAdjustment = 1.3
+          break
+        case 'LOW_VOLATILITY':
+          enhancedConfidence *= 1.1 // Higher confidence in low volatility
+          volatilityAdjustment = 0.7
+          break
+        case 'DIVERGENT':
+          enhancedConfidence *= 0.7 // Much lower confidence in divergent markets
+          volatilityAdjustment = 1.5
+          break
+        default:
+          volatilityAdjustment = 1.0
+      }
+      
+      // Enhance confidence with volatility service confidence
+      enhancedConfidence = (enhancedConfidence + realTimeVolatility.confidence) / 2
+    }
+    
+    // Calculate AI-driven volatility metrics as per CLAUDE.md strategy
+    const volatilityMetrics = this.calculateVolatilityMetrics(asset, realTimeVolatility, indicators)
     
     return {
       asset,
       timeframe,
       prediction: signal.signal,
-      confidence: signal.confidence,
-      strength: signal.strength,
+      confidence: Math.min(enhancedConfidence, 1.0),
+      strength: Math.min(enhancedStrength * volatilityAdjustment, 1.0),
       entry: this.historicalData.get(asset).prices.slice(-1)[0],
       stopLoss: signal.stopLoss,
       takeProfit: signal.takeProfit,
-      positionSize: signal.positionSize,
+      positionSize: this.calculateVolatilityAdjustedPosition(signal.positionSize, realTimeVolatility),
       riskReward: signal.riskReward,
       technicalScore: signal.components.technical?.signal || 0,
       mlScore: signal.components.ml?.signal || 0,
@@ -1205,9 +1416,14 @@ class AdvancedMarketPredictionEngine {
       indicators: {
         rsi: indicators.rsi,
         macd: indicators.macd,
-        volatility: indicators.volatility20,
-        trend: this.calculateTrendStrength(asset)
-      }
+        volatility: realTimeVolatility?.current || indicators.volatility20 || 0.5,
+        predictedVolatility: volatilityPrediction?.volatility || 0.5,
+        volatilityConfidence: realTimeVolatility?.confidence || 0.5,
+        trend: this.calculateTrendStrength(asset),
+        ...volatilityMetrics
+      },
+      marketRegime: realTimeVolatility?.regime || 'NORMAL',
+      volatilityStrategy: this.getVolatilityStrategy(realTimeVolatility)
     }
   }
 
